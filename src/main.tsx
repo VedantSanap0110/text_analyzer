@@ -2,22 +2,13 @@ import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import App from './App.tsx';
 import './index.css';
-
-// Register Service Worker
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', () => {
-    navigator.serviceWorker.register('/serviceWorker.js')
-      .then((registration) => {
-        console.log('ServiceWorker registration successful:', registration.scope);
-      })
-      .catch((error) => {
-        console.log('ServiceWorker registration failed:', error);
-      });
-  });
-}
+import * as serviceWorkerRegistration from './serviceWorkerRegistration';
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     <App />
   </StrictMode>
 );
+
+// Register service worker
+serviceWorkerRegistration.register();

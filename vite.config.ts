@@ -1,7 +1,6 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
-// https://vitejs.dev/config/
 export default defineConfig({
   plugins: [react()],
   optimizeDeps: {
@@ -14,11 +13,7 @@ export default defineConfig({
         serviceWorker: 'src/serviceWorker.ts',
       },
       output: {
-        entryFileNames: (assetInfo) => {
-          return assetInfo.name === 'serviceWorker'
-            ? 'serviceWorker.js'
-            : 'assets/[name]-[hash].js';
-        },
+        entryFileNames: '[name].js',
       },
     },
   },

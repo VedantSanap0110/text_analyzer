@@ -1,20 +1,22 @@
-// This service worker can be customized!
-// See https://developers.google.com/web/tools/workbox/modules
-// for the list of available Workbox modules, or add any other
-// code you'd like.
+/// <reference lib="webworker" />
 
-const CACHE_NAME = 'text-analyzer-cache-v1';
+declare const self: ServiceWorkerGlobalScope;
+
+interface SyncEvent extends ExtendableEvent {
+  readonly tag: string;
+}
+
+const CACHE_NAME = 'e-commerce-v1';
 const urlsToCache = [
   '/',
   '/index.html',
-  '/manifest.json',
-  '/icons/icon-192.png',
-  '/icons/icon-512.png'
+  '/src/main.tsx',
+  '/src/App.tsx',
+  '/src/index.css'
 ];
 
-// Install a service worker
-self.addEventListener('install', (event: any) => {
-  // Perform install steps
+// Install Service Worker
+self.addEventListener('install', (event: ExtendableEvent) => {
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then((cache) => {
@@ -24,23 +26,8 @@ self.addEventListener('install', (event: any) => {
   );
 });
 
-// Cache and return requests
-self.addEventListener('fetch', (event: any) => {
-  event.respondWith(
-    caches.match(event.request)
-      .then((response) => {
-        // Cache hit - return response
-        if (response) {
-          return response;
-        }
-        return fetch(event.request);
-      }
-    )
-  );
-});
-
-// Update a service worker
-self.addEventListener('activate', (event: any) => {
+// Activate Service Worker
+self.addEventListener('activate', (event: ExtendableEvent) => {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
@@ -55,3 +42,76 @@ self.addEventListener('activate', (event: any) => {
     })
   );
 });
+
+// Fetch Event
+self.addEventListener('fetch', (event: FetchEvent) => {
+  event.respondWith(
+    caches.match(event.request)
+      .then((response) => {
+        // Cache hit - return response
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then(
+          (response) => {
+            // Check if we received a valid response
+            if (!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+
+            // Clone the response
+            const responseToCache = response.clone();
+
+            caches.open(CACHE_NAME)
+              .then((cache) => {
+                cache.put(event.request, responseToCache);
+              });
+
+            return response;
+          }
+        );
+      })
+  );
+});
+
+// Background Sync
+self.addEventListener('sync', (event: Event) => {
+  const syncEvent = event as SyncEvent;
+  if (syncEvent.tag === 'syncOrders') {
+    syncEvent.waitUntil(syncOrders());
+  }
+});
+
+// Push Notification
+self.addEventListener('push', (event: PushEvent) => {
+  const options: NotificationOptions = {
+    body: event.data?.text() ?? 'No payload',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png'
+  };
+
+  event.waitUntil(
+    self.registration.showNotification('E-commerce PWA', options)
+  );
+});
+
+async function syncOrders() {
+  try {
+    const failedOrders = await getFailedOrders();
+    await Promise.all(failedOrders.map(order => sendOrderToServer(order)));
+  } catch (error) {
+    console.error('Error syncing orders:', error);
+  }
+}
+
+// Helper functions (to be implemented based on your data structure)
+async function getFailedOrders(): Promise<any[]> {
+  // Implement getting failed orders from IndexedDB
+  return [];
+}
+
+async function sendOrderToServer(order: any): Promise<void> {
+  // Implement sending order to server
+  return Promise.resolve();
+}
